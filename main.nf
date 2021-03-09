@@ -34,7 +34,7 @@ if (params.protocol != 'metagenomic' && params.protocol != 'amplicon') {
     exit 1, "Invalid protocol option: ${params.protocol}. Valid options: 'metagenomic' or 'amplicon'!"
 }
 
-if (params.protocol == 'amplicon' && !params.skip_assembly && !params.amplicon_fasta) {
+if (params.protocol == 'amplicon' && !params.amplicon_fasta) {
     exit 1, "To perform de novo assembly in 'amplicon' mode please provide a valid amplicon fasta file!"
 }
 if (params.amplicon_fasta) { ch_amplicon_fasta = file(params.amplicon_fasta, checkIfExists: true) }
@@ -51,11 +51,6 @@ if ((callerList + callers).unique().size() != callerList.size()) {
     exit 1, "Invalid variant calller option: ${params.callers}. Valid options: ${callerList.join(', ')}"
 }
 
-assemblerList = [ 'spades', 'metaspades', 'unicycler', 'minia' ]
-assemblers = params.assemblers ? params.assemblers.split(',').collect{ it.trim().toLowerCase() } : []
-if ((assemblerList + assemblers).unique().size() != assemblerList.size()) {
-    exit 1, "Invalid assembler option: ${params.assemblers}. Valid options: ${assemblerList.join(', ')}"
-}
 
 // Viral reference files
 if (params.genomes && params.genome && !params.genomes.containsKey(params.genome)) {
@@ -170,7 +165,7 @@ if (!params.skip_variants) {
 } else {
     summary['Skip Variant Calling']  = 'Yes'
 }
-if (!params.skip_kraken2 && !params.skip_assembly) {
+if (!params.skip_kraken2) {
     if (params.kraken2_db)           summary['Host Kraken2 DB'] = params.kraken2_db
     if (params.kraken2_db_name)      summary['Host Kraken2 Name'] = params.kraken2_db_name
     if (params.kraken2_use_ftp)      summary['Kraken2 Use FTP'] = params.kraken2_use_ftp
@@ -291,7 +286,7 @@ if (params.gff) {
 /*
  * PREPROCESSING: Uncompress Kraken2 database
  */
-if (!params.skip_kraken2 && params.kraken2_db && !params.skip_assembly) {
+if (!params.skip_kraken2 && params.kraken2_db) {
     file(params.kraken2_db, checkIfExists: true)
     if (params.kraken2_db.endsWith('.tar.gz')) {
         process UNTAR_KRAKEN2_DB {
@@ -519,7 +514,7 @@ if (!params.skip_adapter_trimming) {
                     }
 
         when:
-        !params.skip_variants || !params.skip_assembly
+        !params.skip_variants 
 
         input:
         tuple val(sample), val(single_end), path(reads) from ch_cat_fastp
@@ -596,9 +591,6 @@ if (!isOffline()) {
             if (params.save_reference) {
                 publishDir "${params.outdir}/genome", mode: params.publish_dir_mode
             }
-
-            when:
-            !params.skip_assembly
 
             output:
             path "$db" into ch_kraken2_db
@@ -715,7 +707,7 @@ process MAKE_SNPEFF_DB {
     }
 
     when:
-    (!params.skip_variants || !params.skip_assembly) && params.gff && !params.skip_snpeff
+    (!params.skip_variants ) && params.gff && !params.skip_snpeff
 
     input:
     path ("SnpEffDB/genomes/${index_base}.fa") from ch_fasta

@@ -1168,7 +1168,6 @@ process MOSDEPTH_GENES {
         mosdepth \\
             --by $bed \\
             --fast-mode \\
-            --use-median \\
             --thresholds 0,1,10,50,100,500 \\
             ${prefix} \\
             ${bam[0]}

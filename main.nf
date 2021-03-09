@@ -1575,7 +1575,7 @@ process IVAR_QUAST {
     path consensus from ch_ivar_consensus.collect{ it[2] }
     path fasta from ch_fasta
     path gff from ch_gff
-    
+
     output:
     path "AF${params.max_allele_freq}"
     path "report.tsv" into ch_ivar_quast_mqc
@@ -1613,8 +1613,8 @@ process IVAR_NEXTCLADE {
     script:
     """
     cat ${consensus.join(' ')} > sequences.fasta
-    nextclade 
-        -i sequences.fasta 
+    nextclade \\
+        -i sequences.fasta \\
         -o results.json
     """
 }

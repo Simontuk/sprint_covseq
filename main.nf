@@ -1609,7 +1609,6 @@ process IVAR_NEXTCLADE {
     path "results.json"
 
     script:
-    features = params.gff ? "--features $gff" : ""
     """
     cat ${consensus.join(' ')} > sequences.fasta
     nextclade 

@@ -1163,7 +1163,7 @@ process MOSDEPTH_GENES {
 
         script:
         suffix = params.skip_markduplicates ? "" : ".mkD"
-        prefix = "${sample}.trim${suffix}.amplicon"
+        prefix = "${sample}.trim${suffix}.gene"
         """
         mosdepth \\
             --by $bed \\
@@ -1190,7 +1190,7 @@ process MOSDEPTH_GENES {
 
         script:
         suffix = params.skip_markduplicates ? "" : ".mkD"
-        suffix = ".trim${suffix}.amplicon"
+        suffix = ".trim${suffix}.gene"
         """
         plot_mosdepth_regions.r \\
             --input_files ${bed.join(',')} \\

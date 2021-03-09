@@ -1672,7 +1672,7 @@ process IVAR_NEXTCLADE {
     cat ${consensus.join(' ')} > sequences.fasta
     nextclade \\
         -i sequences.fasta \\
-        -o results.json
+        -o nextclade_results.csv
     """
 }
 

@@ -43,6 +43,7 @@ if (params.protocol == 'amplicon' && !params.skip_variants && !params.amplicon_b
     exit 1, "To perform variant calling in 'amplicon' mode please provide a valid amplicon BED file!"
 }
 if (params.amplicon_bed) { ch_amplicon_bed = file(params.amplicon_bed, checkIfExists: true) }
+if (params.nc_045512_bed) { nc_045512_bed = file(params.nc_045512_bed, checkIfExists: true) }
 
 callerList = [ 'varscan2', 'ivar', 'bcftools']
 callers = params.callers ? params.callers.split(',').collect{ it.trim().toLowerCase() } : []
@@ -924,6 +925,7 @@ if (params.skip_markduplicates) {
         .into { ch_markdup_bam_metrics
                 ch_markdup_bam_mosdepth_genome
                 ch_markdup_bam_mosdepth_amplicon
+                ch_markdup_bam_mosdepth_genes
                 ch_markdup_bam_mpileup
                 ch_markdup_bam_varscan2_consensus
                 ch_markdup_bam_bcftools
@@ -954,6 +956,7 @@ if (params.skip_markduplicates) {
         tuple val(sample), val(single_end), path("*.sorted.{bam,bam.bai}") into ch_markdup_bam_metrics,
                                                                                 ch_markdup_bam_mosdepth_genome,
                                                                                 ch_markdup_bam_mosdepth_amplicon,
+                                                                                ch_markdup_bam_mosdepth_genes,
                                                                                 ch_markdup_bam_mpileup,
                                                                                 ch_markdup_bam_varscan2_consensus,
                                                                                 ch_markdup_bam_bcftools,
@@ -1141,6 +1144,61 @@ if (params.protocol == 'amplicon') {
     }
 }
 
+
+process MOSDEPTH_GENES {
+        tag "$sample"
+        label 'process_medium'
+        publishDir "${params.outdir}/variants/bam/mosdepth/genes", mode: params.publish_dir_mode
+
+        when:
+        !params.skip_variants && !params.skip_mosdepth
+
+        input:
+        tuple val(sample), val(single_end), path(bam) from ch_markdup_bam_mosdepth_genes
+        path bed from nc_045512_bed
+
+        output:
+        path "*.regions.bed.gz" into ch_mosdepth_genes_region_bed
+        path "*.{txt,gz,csi}"
+
+        script:
+        suffix = params.skip_markduplicates ? "" : ".mkD"
+        prefix = "${sample}.trim${suffix}.amplicon"
+        """
+        mosdepth \\
+            --by $bed \\
+            --fast-mode \\
+            --use-median \\
+            --thresholds 0,1,10,50,100,500 \\
+            ${prefix} \\
+            ${bam[0]}
+        """
+    }
+
+    process MOSDEPTH_GENES_PLOT {
+        label 'process_medium'
+        publishDir "${params.outdir}/variants/bam/mosdepth/genes/plots", mode: params.publish_dir_mode
+
+        when:
+        !params.skip_variants && !params.skip_mosdepth
+
+        input:
+        path bed from ch_mosdepth_genes_region_bed.collect()
+
+        output:
+        path "*.{tsv,pdf}"
+
+        script:
+        suffix = params.skip_markduplicates ? "" : ".mkD"
+        suffix = ".trim${suffix}.amplicon"
+        """
+        plot_mosdepth_regions.r \\
+            --input_files ${bed.join(',')} \\
+            --input_suffix ${suffix}.regions.bed.gz \\
+            --output_dir ./ \\
+            --output_suffix ${suffix}.regions
+        """
+    }
 ////////////////////////////////////////////////////
 /* --              VARSCAN2                    -- */
 ////////////////////////////////////////////////////

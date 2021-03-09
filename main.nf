@@ -1474,7 +1474,8 @@ process IVAR_CONSENSUS {
     path fasta from ch_fasta
 
     output:
-    tuple val(sample), val(single_end), path("*.fa") into ch_ivar_consensus
+    tuple val(sample), val(single_end), path("*.fa") into  ch_ivar_consensus,
+                                                           ch_ivar_consensus_nextclade
     path "*.{txt,tsv,pdf}"
 
     script:
@@ -1566,17 +1567,12 @@ process IVAR_SNPEFF {
 process IVAR_QUAST {
     label 'process_medium'
     publishDir "${params.outdir}/variants/ivar/quast", mode: params.publish_dir_mode,
-        saveAs: { filename ->
-                      if (!filename.endsWith(".tsv")) filename
-                }
-
+        
     when:
     !params.skip_variants && 'ivar' in callers && !params.skip_variants_quast
 
     input:
     path consensus from ch_ivar_consensus.collect{ it[2] }
-    path fasta from ch_fasta
-    path gff from ch_gff
 
     output:
     path "AF${params.max_allele_freq}"
@@ -1592,6 +1588,33 @@ process IVAR_QUAST {
         --threads $task.cpus \\
         ${consensus.join(' ')}
     ln -s AF${params.max_allele_freq}/report.tsv
+    """
+}
+
+process IVAR_NEXTCLADE {
+    container 'neherlab/nextclade'
+    label 'process_medium'
+    publishDir "${params.outdir}/variants/ivar/nextclade", mode: params.publish_dir_mode,
+        saveAs: { filename ->
+                      if (!filename.endsWith(".tsv")) filename
+                }
+
+    when:
+    !params.skip_variants && 'ivar' in callers
+
+    input:
+    path consensus from ch_ivar_consensus_nextclade.collect{ it[2] }
+
+    output:
+    path "results.json"
+
+    script:
+    features = params.gff ? "--features $gff" : ""
+    """
+    cat ${consensus.join(' ')} > sequences.fasta
+    nextclade 
+        -i sequences.fasta 
+        -o results.json
     """
 }
 

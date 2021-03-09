@@ -178,17 +178,6 @@ if (!params.skip_kraken2 && !params.skip_assembly) {
 } else {
     summary['Skip Kraken2']          = 'Yes'
 }
-if (!params.skip_assembly) {
-    summary['Assembly Tools']        = params.assemblers
-    summary['Minia Kmer Size']       = params.minia_kmer
-    if (params.skip_vg)              summary['Skip Variant Graph'] =  'Yes'
-    if (params.skip_blast)           summary['Skip BLAST'] =  'Yes'
-    if (params.skip_abacas)          summary['Skip ABACAS'] =  'Yes'
-    if (params.skip_plasmidid)       summary['Skip PlasmidID'] =  'Yes'
-    if (params.skip_assembly_quast)  summary['Skip Assembly QUAST'] =  'Yes'
-} else {
-    summary['Skip Assembly']         = 'Yes'
-}
 if (params.skip_fastqc)              summary['Skip FastQC'] = 'Yes'
 if (params.skip_multiqc)             summary['Skip MultiQC'] = 'Yes'
 summary['Max Resources']             = "$params.max_memory memory, $params.max_cpus cpus, $params.max_time time per job"
@@ -1665,7 +1654,7 @@ process IVAR_NEXTCLADE {
     path consensus from ch_ivar_consensus_nextclade.collect{ it[2] }
 
     output:
-    path "results.json"
+    path "nextclade_results.csv"
 
     script:
     """

@@ -1521,7 +1521,8 @@ process IVAR_CONSENSUS {
 
     output:
     tuple val(sample), val(single_end), path("*.fa") into  ch_ivar_consensus,
-                                                           ch_ivar_consensus_nextclade
+                                                           ch_ivar_consensus_nextclade,
+                                                           ch_ivar_consensus_pangolin
     path "*.{txt,tsv,pdf}"
 
     script:
@@ -1662,6 +1663,34 @@ process IVAR_NEXTCLADE {
     nextclade \\
         -i sequences.fasta \\
         -o nextclade_results.csv
+    """
+}
+
+process IVAR_PANGOLIN {
+    container 'staphb/pangolin'
+    label 'process_medium'
+    publishDir "${params.outdir}/variants/ivar/pangolin", mode: params.publish_dir_mode,
+        saveAs: { filename ->
+                      if (!filename.endsWith(".tsv")) filename
+                }
+
+    when:
+    !params.skip_variants && 'ivar' in callers
+
+    input:
+    path consensus from ch_ivar_consensus_pangolin.collect{ it[2] }
+
+    output:
+    path "pangolin_report.csv"
+
+    script:
+    """
+    cat ${consensus.join(' ')} > sequences.fasta
+    pangolin \\
+        sequences.fasta \\
+        -t 6 \\
+        -p \\
+        --outfile pangolin_report.csv
     """
 }
 

@@ -1808,6 +1808,78 @@ if (!params.skip_variants && callers.size() > 2) {
     }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/* --                                                                     -- */
+/* --                          MULTIQC                                    -- */
+/* --                                                                     -- */
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+Channel.from(summary.collect{ [it.key, it.value] })
+    .map { k,v -> "<dt>$k</dt><dd><samp>${v ?: '<span style=\"color:#999999;\">N/A</a>'}</samp></dd>" }
+    .reduce { a, b -> return [a, b].join("\n            ") }
+    .map { x -> """
+    id: 'nf-core-viralrecon-summary'
+    description: " - this information is collected when the pipeline is started."
+    section_name: 'nf-core/viralrecon Workflow Summary'
+    section_href: 'https://github.com/nf-core/viralrecon'
+    plot_type: 'html'
+    data: |
+        <dl class=\"dl-horizontal\">
+            $x
+        </dl>
+    """.stripIndent() }
+    .set { ch_workflow_summary }
+
+/*
+ * Parse software version numbers
+ */
+process get_software_versions {
+    publishDir "${params.outdir}/pipeline_info", mode: params.publish_dir_mode,
+        saveAs: { filename ->
+                      if (filename.endsWith(".csv")) filename
+                      else null
+                }
+
+    output:
+    path "software_versions_mqc.yaml" into ch_software_versions_yaml
+    path "software_versions.csv"
+
+    script:
+    """
+    echo $workflow.manifest.version > v_pipeline.txt
+    echo $workflow.nextflow.version > v_nextflow.txt
+    parallel-fastq-dump --version > v_parallel_fastq_dump.txt
+    fastqc --version > v_fastqc.txt
+    fastp --version 2> v_fastp.txt
+    bowtie2 --version > v_bowtie2.txt
+    samtools --version > v_samtools.txt
+    bedtools --version > v_bedtools.txt
+    mosdepth --version > v_mosdepth.txt
+    picard CollectMultipleMetrics --version &> v_picard.txt || true
+    ivar -v > v_ivar.txt
+    echo \$(varscan 2>&1) > v_varscan.txt
+    bcftools -v > v_bcftools.txt
+    snpEff -version > v_snpeff.txt
+    echo \$(SnpSift 2>&1) > v_snpsift.txt
+    quast.py --version > v_quast.txt
+    cutadapt --version > v_cutadapt.txt
+    kraken2 --version > v_kraken2.txt
+    spades.py --version > v_spades.txt
+    unicycler --version > v_unicycler.txt
+    minia --version > v_minia.txt
+    blastn -version > v_blast.txt
+    abacas.pl -v &> v_abacas.txt || true
+    plasmidID -v > v_plasmidid.txt  || true
+    Bandage --version > v_bandage.txt
+    minimap2 --version > v_minimap2.txt
+    vg version > v_vg.txt
+    echo \$(R --version 2>&1) > v_R.txt
+    multiqc --version > v_multiqc.txt
+    scrape_software_versions.py &> software_versions_mqc.yaml
+    """
+}
 
 /*
  * STEP 7: MultiQC

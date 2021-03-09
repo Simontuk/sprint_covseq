@@ -1048,7 +1048,7 @@ process MOSDEPTH_GENOME {
     mosdepth \\
         --by 200 \\
         --fast-mode \\
-        --t 2 \\
+        --threads 2 \\
         $prefix \\
         ${bam[0]}
 

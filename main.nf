@@ -637,7 +637,7 @@ if (!params.skip_kraken2) {
     process KRAKEN2 {
         tag "$db"
         label 'process_high'
-        publishDir "${params.outdir}/assembly/kraken2", mode: params.publish_dir_mode,
+        publishDir "${params.outdir}/kraken2", mode: params.publish_dir_mode,
             saveAs: { filename ->
                           if (filename.endsWith(".txt")) filename
                           else params.save_kraken2_fastq ? filename : null
@@ -650,7 +650,7 @@ if (!params.skip_kraken2) {
         output:
         tuple val(sample), val(single_end), path("*.viral*") into ch_fastp_bowtie2
         path "*.report.txt" into ch_kraken2_report_mqc
-        path "*.host*"
+        //path "*.host*"
 
 
         script:

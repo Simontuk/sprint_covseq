@@ -1048,6 +1048,7 @@ process MOSDEPTH_GENOME {
     mosdepth \\
         --by 200 \\
         --fast-mode \\
+        --t 2 \\
         $prefix \\
         ${bam[0]}
 
@@ -1093,6 +1094,7 @@ if (params.protocol == 'amplicon') {
             --by amplicon.collapsed.bed \\
             --fast-mode \\
             --use-median \\
+            --no-per-base \\
             --thresholds 0,1,10,50,100,500 \\
             ${prefix} \\
             ${bam[0]}
@@ -1149,6 +1151,7 @@ process MOSDEPTH_GENES {
         mosdepth \\
             --by $bed \\
             --fast-mode \\
+            --quantize 0:1:5:150 \\
             --thresholds 0,1,10,50,100,500 \\
             ${prefix} \\
             ${bam[0]}
@@ -1648,13 +1651,17 @@ process IVAR_NEXTCLADE {
 
     output:
     path "nextclade_results.csv"
+    path "nextclade_tree.json"
+    path "nextclade_results.json"
 
     script:
     """
     cat ${consensus.join(' ')} > sequences.fasta
     nextclade \\
         -i sequences.fasta \\
-        -o nextclade_results.csv
+        --output-csv nextclade_results.csv \\
+        --output-tree nextclade_tree.json \\
+        --output-json nextclade_results.json
     """
 }
 

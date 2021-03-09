@@ -1573,7 +1573,9 @@ process IVAR_QUAST {
 
     input:
     path consensus from ch_ivar_consensus.collect{ it[2] }
-
+    path fasta from ch_fasta
+    path gff from ch_gff
+    
     output:
     path "AF${params.max_allele_freq}"
     path "report.tsv" into ch_ivar_quast_mqc

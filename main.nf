@@ -1681,7 +1681,6 @@ process IVAR_PANGOLIN {
     pangolin \\
         sequences.fasta \\
         -t 6 \\
-        -p \\
         --outfile pangolin_report.csv
     """
 }
